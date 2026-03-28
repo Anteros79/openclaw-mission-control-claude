@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Mission Control Dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev"],
+      "port": 3001
+    },
+    {
+      "name": "Mission Control Prod",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["start", "--port", "3001"],
+      "port": 3001
+    }
+  ]
+}
