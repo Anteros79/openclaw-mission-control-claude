@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getGatewayClient } from "@/lib/gateway-ws-client";
+import { applyPersistedControlAction } from "@/lib/mission-control-repository";
 
 const controlSchema = z.object({
   actionId: z.string().min(1),
@@ -26,13 +27,15 @@ export async function POST(request: Request) {
   const client = getGatewayClient();
 
   if (!client) {
+    const applied = await applyPersistedControlAction(payload);
+
     return NextResponse.json({
+      event: applied.event,
       result: {
-        actionId: payload.actionId,
-        status: "succeeded",
-        message: `${payload.command} simulated locally because GILES_GATEWAY_URL is not configured.`,
-        completedAt: stamp()
-      }
+        ...applied.result,
+        message: `${payload.command} simulated locally because GILES_GATEWAY_URL is not configured.`
+      },
+      snapshot: applied.snapshot
     });
   }
 
@@ -49,26 +52,29 @@ export async function POST(request: Request) {
   const mapped = methodMap[key];
 
   if (!mapped) {
+    const applied = await applyPersistedControlAction(payload);
+
     return NextResponse.json({
+      event: applied.event,
       result: {
-        actionId: payload.actionId,
-        status: "succeeded",
-        message: `${payload.command} acknowledged (no gateway mapping for ${key}).`,
-        completedAt: stamp()
-      }
+        ...applied.result,
+        message: `${payload.command} acknowledged (no gateway mapping for ${key}).`
+      },
+      snapshot: applied.snapshot
     });
   }
 
   try {
     await client.request(mapped.method, mapped.params);
+    const applied = await applyPersistedControlAction(payload);
 
     return NextResponse.json({
+      event: applied.event,
       result: {
-        actionId: payload.actionId,
-        status: "succeeded",
-        message: `${payload.command} routed through Giles via WebSocket.`,
-        completedAt: stamp()
-      }
+        ...applied.result,
+        message: `${payload.command} routed through Giles via WebSocket.`
+      },
+      snapshot: applied.snapshot
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "gateway error";

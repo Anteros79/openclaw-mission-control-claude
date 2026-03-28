@@ -3,10 +3,30 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-type LocalAttachment = {
+import type { MissionChatAttachment } from "@/types/mission-control";
+
+type LocalAttachment = MissionChatAttachment & {
   id: string;
   name: string;
   sizeLabel: string;
+};
+
+const inferAttachmentKind = (fileName: string): MissionChatAttachment["kind"] => {
+  const normalized = fileName.toLowerCase();
+
+  if (normalized.endsWith(".png") || normalized.endsWith(".jpg") || normalized.endsWith(".jpeg") || normalized.endsWith(".gif") || normalized.endsWith(".webp")) {
+    return "image";
+  }
+
+  if (normalized.endsWith(".pdf")) {
+    return "pdf";
+  }
+
+  if (normalized.endsWith(".md") || normalized.endsWith(".markdown")) {
+    return "markdown";
+  }
+
+  return "config";
 };
 
 type AssistantState = {
@@ -56,6 +76,7 @@ export const useAssistantStore = create<AssistantState>()(
             {
               id: `${file.name}-${file.size}-${Date.now()}`,
               name: file.name,
+              kind: inferAttachmentKind(file.name),
               sizeLabel: `${Math.max(1, Math.round(file.size / 1024))} KB`
             }
           ]

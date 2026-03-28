@@ -6,10 +6,12 @@ import type { MissionDataAdapter } from "@/adapters/types";
 import { appConfig } from "@/lib/app-config";
 import { injectMockActivity } from "@/lib/mission-control-runtime";
 import type {
+  MissionChatMessageInput,
   MissionControlAction,
   MissionControlActionInput,
   MissionControlActionResult,
-  MissionControlSnapshot
+  MissionControlSnapshot,
+  MissionMoveTaskInput
 } from "@/types/mission-control";
 
 export type MissionConnectionState = "degraded" | "idle" | "live" | "loading";
@@ -17,11 +19,14 @@ export type MissionConnectionState = "degraded" | "idle" | "live" | "loading";
 type MissionState = {
   snapshot: MissionControlSnapshot | null;
   connectionState: MissionConnectionState;
+  errorMessage: string | null;
   pendingActionId: string | null;
   requestedAction: MissionControlAction | null;
   lastActionResult: MissionControlActionResult | null;
   connect: (adapter: MissionDataAdapter) => () => void;
   refresh: () => Promise<void>;
+  moveTaskCard: (input: MissionMoveTaskInput) => Promise<void>;
+  sendChatMessage: (input: MissionChatMessageInput) => Promise<void>;
   requestAction: (action: MissionControlAction) => void;
   cancelRequestedAction: () => void;
   confirmRequestedAction: () => Promise<void>;
@@ -54,6 +59,7 @@ const toActionInput = (action: MissionControlAction): MissionControlActionInput 
 export const useMissionStore = create<MissionState>()((set, get) => ({
   snapshot: null,
   connectionState: "idle",
+  errorMessage: null,
   pendingActionId: null,
   requestedAction: null,
   lastActionResult: null,
@@ -70,11 +76,13 @@ export const useMissionStore = create<MissionState>()((set, get) => ({
         const snapshot = await adapter.getSnapshot();
         set({
           snapshot,
-          connectionState: "live"
+          connectionState: "live",
+          errorMessage: null
         });
-      } catch {
+      } catch (error) {
         set({
-          connectionState: "degraded"
+          connectionState: "degraded",
+          errorMessage: error instanceof Error ? error.message : "Mission snapshot unavailable."
         });
       }
     };
@@ -105,11 +113,47 @@ export const useMissionStore = create<MissionState>()((set, get) => ({
       const snapshot = await activeAdapter.getSnapshot();
       set({
         snapshot,
-        connectionState: "live"
+        connectionState: "live",
+        errorMessage: null
       });
-    } catch {
+    } catch (error) {
       set({
-        connectionState: "degraded"
+        connectionState: "degraded",
+        errorMessage: error instanceof Error ? error.message : "Mission snapshot unavailable."
+      });
+    }
+  },
+  moveTaskCard: async (input) => {
+    if (!activeAdapter) return;
+
+    try {
+      const snapshot = await activeAdapter.moveTaskCard(input);
+      set({
+        snapshot,
+        connectionState: "live",
+        errorMessage: null
+      });
+    } catch (error) {
+      set({
+        connectionState: "degraded",
+        errorMessage: error instanceof Error ? error.message : "Task move failed."
+      });
+    }
+  },
+  sendChatMessage: async (input) => {
+    if (!activeAdapter) return;
+
+    try {
+      const snapshot = await activeAdapter.sendChatMessage(input);
+      set({
+        snapshot,
+        connectionState: "live",
+        errorMessage: null
+      });
+    } catch (error) {
+      set({
+        connectionState: "degraded",
+        errorMessage: error instanceof Error ? error.message : "Chat send failed."
       });
     }
   },
@@ -140,9 +184,10 @@ export const useMissionStore = create<MissionState>()((set, get) => ({
         requestedAction: null,
         pendingActionId: null,
         lastActionResult: response.result,
-        connectionState: "live"
+        connectionState: "live",
+        errorMessage: null
       });
-    } catch {
+    } catch (error) {
       set({
         pendingActionId: null,
         requestedAction: null,
@@ -154,7 +199,8 @@ export const useMissionStore = create<MissionState>()((set, get) => ({
           message: `${requestedAction.label} failed before Giles acknowledged it.`,
           completedAt: new Date().toISOString().replace("T", " ").slice(0, 16)
         },
-        connectionState: "degraded"
+        connectionState: "degraded",
+        errorMessage: error instanceof Error ? error.message : "Control action failed."
       });
     }
   },

@@ -365,7 +365,16 @@ const createLiveAdapter = (): MissionDataAdapter => {
     }
   };
 
-  return { getSnapshot, runControlAction };
+  return {
+    getSnapshot,
+    runControlAction,
+    async moveTaskCard() {
+      return getSnapshot();
+    },
+    async sendChatMessage() {
+      return getSnapshot();
+    }
+  };
 };
 
 export { createLiveAdapter };

@@ -17,6 +17,29 @@ const appConfigSchema = z.object({
 
 export type AppConfig = z.infer<typeof appConfigSchema>;
 
+const normalizeTailnetDomain = (value: string) =>
+  value
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/.*$/, "")
+    .replace(/^\.+|\.+$/g, "");
+
+export const resolveDefaultGatewayOrigin = () => {
+  const explicitGatewayOrigin = process.env.NEXT_PUBLIC_GATEWAY_ORIGIN;
+
+  if (explicitGatewayOrigin) {
+    return explicitGatewayOrigin;
+  }
+
+  const tailnetDomain = process.env.NEXT_PUBLIC_TAILNET_DOMAIN;
+
+  if (tailnetDomain) {
+    return `https://giles.${normalizeTailnetDomain(tailnetDomain)}`;
+  }
+
+  return "https://giles";
+};
+
 export const createAppConfig = (input: AppConfig) => {
   const parsedConfig = appConfigSchema.parse(input);
 
@@ -30,8 +53,7 @@ export const createAppConfig = (input: AppConfig) => {
 };
 
 export const appConfig = createAppConfig({
-  gatewayOrigin:
-    process.env.NEXT_PUBLIC_GATEWAY_ORIGIN ?? "https://giles.tailnet.ts.net",
+  gatewayOrigin: resolveDefaultGatewayOrigin(),
   nodeId: process.env.NEXT_PUBLIC_NODE_ID ?? "giles",
   nodeRole: process.env.NEXT_PUBLIC_NODE_ROLE === "host" ? "host" : "gateway",
   storageDriver: "filesystem",

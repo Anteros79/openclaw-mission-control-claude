@@ -2,13 +2,13 @@
 
 import { DndContext, type DragEndEvent, useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { useEffect } from "react";
+import { GripHorizontal } from "lucide-react";
 
 import { EntityLinkList } from "@/components/ui/entity-link-list";
 import { Panel } from "@/components/ui/panel";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { StatusPill } from "@/components/ui/status-pill";
-import { useKanbanStore } from "@/stores/kanban-store";
+import { useMissionStore } from "@/stores/mission-store";
 import type { MissionKanbanColumn, MissionTaskCard } from "@/types/mission-control";
 
 const DraggableCard = ({ card, columnId }: { card: MissionTaskCard; columnId: string }) => {
@@ -23,8 +23,6 @@ const DraggableCard = ({ card, columnId }: { card: MissionTaskCard; columnId: st
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform) }}
-      {...listeners}
-      {...attributes}
       className={`rounded-[22px] border p-4 text-left shadow-[0_0_24px_rgba(0,0,0,0.18)] transition ${
         isDragging
           ? "border-emerald-300/40 bg-[linear-gradient(180deg,rgba(84,255,176,0.14),rgba(255,255,255,0.04))]"
@@ -32,7 +30,18 @@ const DraggableCard = ({ card, columnId }: { card: MissionTaskCard; columnId: st
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm text-white">{card.title}</p>
+        <div className="flex min-w-0 items-start gap-3">
+          <button
+            type="button"
+            {...listeners}
+            {...attributes}
+            aria-label={`Move ${card.title}`}
+            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/18 text-white/42 transition hover:border-emerald-300/30 hover:text-emerald-100"
+          >
+            <GripHorizontal className="h-4 w-4" />
+          </button>
+          <p className="text-sm text-white">{card.title}</p>
+        </div>
         <StatusPill tone={isDragging ? "active" : "idle"}>{card.severity}</StatusPill>
       </div>
       <div className="mt-3 flex items-center justify-between gap-3">
@@ -92,13 +101,7 @@ const DroppableColumn = ({ column }: { column: MissionKanbanColumn }) => {
 };
 
 export const KanbanBoard = ({ columns }: { columns: MissionKanbanColumn[] }) => {
-  const { columns: persistedColumns, initialize, moveCard } = useKanbanStore();
-
-  useEffect(() => {
-    initialize(columns);
-  }, [columns, initialize]);
-
-  const activeColumns = persistedColumns.length > 0 ? persistedColumns : columns;
+  const moveTaskCard = useMissionStore((state) => state.moveTaskCard);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const sourceColumnId = event.active.data.current?.columnId;
@@ -108,7 +111,11 @@ export const KanbanBoard = ({ columns }: { columns: MissionKanbanColumn[] }) => 
       return;
     }
 
-    moveCard(String(event.active.id), String(sourceColumnId), targetColumnId);
+    void moveTaskCard({
+      cardId: String(event.active.id),
+      sourceColumnId: String(sourceColumnId),
+      targetColumnId
+    });
   };
 
   return (
@@ -120,7 +127,7 @@ export const KanbanBoard = ({ columns }: { columns: MissionKanbanColumn[] }) => 
       />
       <DndContext onDragEnd={handleDragEnd}>
         <div className="grid gap-4 xl:grid-cols-5">
-          {activeColumns.map((column) => (
+          {columns.map((column) => (
             <DroppableColumn key={column.id} column={column} />
           ))}
         </div>

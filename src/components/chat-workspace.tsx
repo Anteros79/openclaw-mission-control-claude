@@ -1,7 +1,7 @@
 "use client";
 
 import { Paperclip, Send } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -9,6 +9,7 @@ import { Panel } from "@/components/ui/panel";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useAssistantStore } from "@/stores/assistant-store";
+import { useMissionStore } from "@/stores/mission-store";
 import type { MissionChatThread } from "@/types/mission-control";
 
 export const ChatWorkspace = ({
@@ -18,6 +19,7 @@ export const ChatWorkspace = ({
   threads: MissionChatThread[];
   unreadCount: number;
 }) => {
+  const [isSending, setIsSending] = useState(false);
   const {
     activeThreadId,
     draft,
@@ -28,6 +30,7 @@ export const ChatWorkspace = ({
     addAttachment,
     clearPendingAttachments
   } = useAssistantStore();
+  const sendChatMessage = useMissionStore((state) => state.sendChatMessage);
 
   const activeThread = useMemo(
     () => threads.find((thread) => thread.id === activeThreadId) ?? threads[0],
@@ -37,6 +40,30 @@ export const ChatWorkspace = ({
   useEffect(() => {
     seedUnreadCount(unreadCount);
   }, [seedUnreadCount, unreadCount]);
+
+  const handleSend = async () => {
+    if (!activeThread || isSending || (!draft.trim() && pendingAttachments.length === 0)) {
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      await sendChatMessage({
+        threadId: activeThread.id,
+        content: draft,
+        attachments: pendingAttachments
+      });
+      setDraft("");
+      clearPendingAttachments();
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  if (!activeThread) {
+    return null;
+  }
 
   return (
     <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_280px]">
@@ -143,6 +170,7 @@ export const ChatWorkspace = ({
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             placeholder="Continue the active thread without losing context while you move through the command center..."
+            aria-label="Chat draft"
             className="min-h-32 w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-white/34"
           />
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -153,6 +181,7 @@ export const ChatWorkspace = ({
                 <input
                   type="file"
                   className="hidden"
+                  aria-label="Attach file to chat"
                   onChange={(event) => {
                     const file = event.target.files?.[0];
 
@@ -173,9 +202,13 @@ export const ChatWorkspace = ({
             </div>
             <button
               type="button"
+              onClick={() => {
+                void handleSend();
+              }}
+              disabled={isSending || (!draft.trim() && pendingAttachments.length === 0)}
               className="inline-flex items-center gap-2 rounded-full border border-emerald-300/35 bg-emerald-300/12 px-4 py-2 text-xs uppercase tracking-[0.24em] text-emerald-100"
             >
-              Send
+              {isSending ? "Sending" : "Send"}
               <Send className="h-3.5 w-3.5" />
             </button>
           </div>

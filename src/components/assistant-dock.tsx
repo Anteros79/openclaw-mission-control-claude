@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import { Activity, Paperclip, Send, X } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { Panel } from "@/components/ui/panel";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useAssistantStore } from "@/stores/assistant-store";
+import { useMissionStore } from "@/stores/mission-store";
 import type { MissionChatThread } from "@/types/mission-control";
 
 type AssistantDockProps = {
@@ -17,6 +18,7 @@ type AssistantDockProps = {
 };
 
 export const AssistantDock = ({ threads, unreadCount }: AssistantDockProps) => {
+  const [isSending, setIsSending] = useState(false);
   const {
     activeThreadId,
     draft,
@@ -32,6 +34,7 @@ export const AssistantDock = ({ threads, unreadCount }: AssistantDockProps) => {
     setDraft,
     toggleOpen
   } = useAssistantStore();
+  const sendChatMessage = useMissionStore((state) => state.sendChatMessage);
 
   const activeThread = useMemo(
     () => threads.find((thread) => thread.id === activeThreadId) ?? threads[0],
@@ -42,6 +45,26 @@ export const AssistantDock = ({ threads, unreadCount }: AssistantDockProps) => {
     seedUnreadCount(unreadCount);
     syncUnreadCount(unreadCount);
   }, [seedUnreadCount, syncUnreadCount, unreadCount]);
+
+  const handleSend = async () => {
+    if (!activeThread || isSending || (!draft.trim() && pendingAttachments.length === 0)) {
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      await sendChatMessage({
+        threadId: activeThread.id,
+        content: draft,
+        attachments: pendingAttachments
+      });
+      setDraft("");
+      clearPendingAttachments();
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   if (!activeThread) {
     return null;
@@ -87,6 +110,7 @@ export const AssistantDock = ({ threads, unreadCount }: AssistantDockProps) => {
                   <button
                     type="button"
                     onClick={close}
+                    aria-label="Close assistant"
                     className="rounded-full border border-white/10 p-2 text-white/72 transition hover:border-white/20 hover:text-white"
                   >
                     <X className="h-4 w-4" />
@@ -187,6 +211,7 @@ export const AssistantDock = ({ threads, unreadCount }: AssistantDockProps) => {
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
                     placeholder="Type to keep the thread context alive across navigation..."
+                    aria-label="Assistant draft"
                     className="min-h-28 w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-white/35"
                   />
                   <div className="mt-3 flex items-center justify-between">
@@ -196,6 +221,7 @@ export const AssistantDock = ({ threads, unreadCount }: AssistantDockProps) => {
                       <input
                         type="file"
                         className="hidden"
+                        aria-label="Attach file to assistant"
                         onChange={(event) => {
                           const file = event.target.files?.[0];
 
@@ -209,9 +235,13 @@ export const AssistantDock = ({ threads, unreadCount }: AssistantDockProps) => {
 
                     <button
                       type="button"
+                      onClick={() => {
+                        void handleSend();
+                      }}
+                      disabled={isSending || (!draft.trim() && pendingAttachments.length === 0)}
                       className="inline-flex items-center gap-2 rounded-full border border-emerald-300/35 bg-emerald-300/12 px-4 py-2 text-xs uppercase tracking-[0.24em] text-emerald-100"
                     >
-                      Send
+                      {isSending ? "Sending" : "Send"}
                       <Send className="h-3.5 w-3.5" />
                     </button>
                   </div>

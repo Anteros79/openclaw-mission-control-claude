@@ -1,0 +1,31 @@
+# PhoenixClaw Mission Control Progress
+
+## 2026-03-28
+- Started implementation from a greenfield workspace.
+- Loaded execution-critical skills for TDD, frontend design, software architecture, planning persistence, and verification.
+- Confirmed only brand assets exist in the workspace before scaffolding.
+- Began writing root planning artifacts and the canonical master ledger.
+- Scaffoled a root Next.js TypeScript app manually to coexist with the supplied asset files.
+- Installed the mission-control dependencies for Next.js, Tailwind, Zustand, React Markdown, dnd-kit, Zod, and Vitest.
+- Wrote failing tests for gateway-safe configuration, URL resolution, and shell rendering before implementing the core architecture.
+- Implemented validated environment config, network safety helpers, and a central gateway URL resolver.
+- Implemented the mission-control domain model and seeded snapshot for chat, kanban, agents, projects, research, artifacts, systems, and sessions.
+- Built the shared shell, persistent assistant dock, chat workspace, drag-capable kanban board, and all major route surfaces.
+- Added a dedicated `/mockups` review route with numbered screen boards, responsive triptych layouts, and overlay/state boards for design signoff.
+- Copied PhoenixClaw brand assets into `public/brand` for shell use and metadata icons.
+- Verified the first pass with `pnpm test`, `pnpm lint`, `pnpm build`, and a source scan for localhost/private-IP leakage.
+- Added `scripts/export-mockups.mjs` and generated standalone review artifacts in `output/mockups/` as a PDF plus per-board PNGs.
+- Recorded mockup approval and advanced into the next implementation slice.
+- Added typed node/service registries, cron and inventory models, scoped telemetry, live event envelopes, and gateway-routed control actions.
+- Reworked the mission store into a polling live store with mock telemetry injection, operator confirmations, and action result feedback.
+- Wired service, scheduler, agent, and session controls through Giles-safe adapters and API routes.
+- Extended the systems, overview, projects, agents, and sessions surfaces to show scoped telemetry, registries, live events, and operator actions.
+- Added focused runtime tests for live activity injection and control-action application.
+- Tightened the mission-control visual system with richer shell chrome, branded assistant surfaces, denser kanban and chat treatments, and refreshed review screenshots from the live preview.
+- Replaced the remaining in-memory seed workflows with a persisted `.mission-control/mission-state.json` repository plus `/api/gateway/state` snapshot and mutation routes.
+- Wired persisted kanban moves and chat sends through the mission store so operator actions survive reloads and fresh sessions.
+- Added shared loading, degraded, error, and empty-state surfaces across the major routes.
+- Added automated release smoke and accessibility verification scripts and passed both against the running preview.
+- Corrected the gateway-origin fallback so it no longer assumes the wrong tailnet suffix and now supports explicit tailnet-domain configuration.
+- Added `pnpm verify:giles`, which confirmed the Giles Tailscale gateway is reachable at `https://giles.taile51c67.ts.net` but is still serving the legacy `OpenClaw Control` deployment instead of this PhoenixClaw app.
+- Removed fixed-port assumptions from the dev and verification scripts, then relaunched and revalidated the app on a dynamically assigned preview port.

@@ -9,12 +9,23 @@ import { SystemsUsagePanel } from "@/components/systems/systems-usage-panel";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Panel } from "@/components/ui/panel";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { SurfaceState } from "@/components/ui/surface-state";
 import { useMissionStore } from "@/stores/mission-store";
 
 const Page = () => {
   const snapshot = useMissionStore((state) => state.snapshot);
+  const connectionState = useMissionStore((state) => state.connectionState);
+  const errorMessage = useMissionStore((state) => state.errorMessage);
 
-  if (!snapshot) return null;
+  if (!snapshot) {
+    return (
+      <SurfaceState
+        variant={connectionState === "degraded" ? "error" : "loading"}
+        title={connectionState === "degraded" ? "Systems surface unavailable" : "Loading systems surface"}
+        description={errorMessage ?? "Gateway state, inventory, scheduler visibility, and telemetry are loading."}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

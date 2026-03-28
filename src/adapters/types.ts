@@ -1,6 +1,8 @@
 import type {
+  MissionChatMessageInput,
   MissionControlActionInput,
   MissionControlActionResult,
+  MissionMoveTaskInput,
   MissionControlSnapshot,
   MissionEventEnvelope
 } from "@/types/mission-control";
@@ -12,4 +14,6 @@ export type MissionDataAdapter = {
     result: MissionControlActionResult;
     snapshot: MissionControlSnapshot;
   }>;
+  moveTaskCard: (input: MissionMoveTaskInput) => Promise<MissionControlSnapshot>;
+  sendChatMessage: (input: MissionChatMessageInput) => Promise<MissionControlSnapshot>;
 };

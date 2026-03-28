@@ -9,11 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { Panel } from "@/components/ui/panel";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { SurfaceState } from "@/components/ui/surface-state";
 import { useFilterStore } from "@/stores/filter-store";
 import { useMissionStore } from "@/stores/mission-store";
 
 const Page = () => {
   const snapshot = useMissionStore((state) => state.snapshot);
+  const connectionState = useMissionStore((state) => state.connectionState);
+  const errorMessage = useMissionStore((state) => state.errorMessage);
   const { searchQuery, categoryFilter, setSearchQuery, setCategoryFilter } = useFilterStore();
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
 
@@ -26,7 +29,15 @@ const Page = () => {
     });
   }, [snapshot, searchQuery, categoryFilter]);
 
-  if (!snapshot) return null;
+  if (!snapshot) {
+    return (
+      <SurfaceState
+        variant={connectionState === "degraded" ? "error" : "loading"}
+        title={connectionState === "degraded" ? "Artifact library unavailable" : "Loading artifact library"}
+        description={errorMessage ?? "Brand assets, configs, and model outputs are loading."}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -59,6 +70,7 @@ const Page = () => {
           <button
             type="button"
             onClick={() => setViewMode("gallery")}
+            aria-label="Gallery view"
             className={`rounded-xl p-2 transition ${
               viewMode === "gallery"
                 ? "bg-emerald-300/14 text-white shadow-[0_0_18px_rgba(34,197,94,0.12)]"
@@ -70,6 +82,7 @@ const Page = () => {
           <button
             type="button"
             onClick={() => setViewMode("list")}
+            aria-label="List view"
             className={`rounded-xl p-2 transition ${
               viewMode === "list"
                 ? "bg-emerald-300/14 text-white shadow-[0_0_18px_rgba(34,197,94,0.12)]"
@@ -88,30 +101,38 @@ const Page = () => {
           description="Brand assets, configs, prompt packs, and model outputs with preview galleries."
         />
 
-        {viewMode === "gallery" ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredArtifacts.map((artifact) => (
-              <ArtifactCard key={artifact.id} artifact={artifact} />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredArtifacts.map((artifact) => (
-              <div
-                key={artifact.id}
-                id={artifact.id}
-                className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/5 p-4"
-              >
-                <ArtifactTypeIcon type={artifact.type} className="h-5 w-5 text-white/40" />
-                <div className="flex-1">
-                  <p className="text-sm text-white">{artifact.name}</p>
-                  <p className="mt-1 text-sm text-white/60">{artifact.summary}</p>
+        {filteredArtifacts.length > 0 ? (
+          viewMode === "gallery" ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredArtifacts.map((artifact) => (
+                <ArtifactCard key={artifact.id} artifact={artifact} />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredArtifacts.map((artifact) => (
+                <div
+                  key={artifact.id}
+                  id={artifact.id}
+                  className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/5 p-4"
+                >
+                  <ArtifactTypeIcon type={artifact.type} className="h-5 w-5 text-white/40" />
+                  <div className="flex-1">
+                    <p className="text-sm text-white">{artifact.name}</p>
+                    <p className="mt-1 text-sm text-white/60">{artifact.summary}</p>
+                  </div>
+                  <Badge>{artifact.type}</Badge>
+                  <p className="text-xs uppercase tracking-[0.24em] text-white/38">{artifact.usage}</p>
                 </div>
-                <Badge>{artifact.type}</Badge>
-                <p className="text-xs uppercase tracking-[0.24em] text-white/38">{artifact.usage}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
+        ) : (
+          <SurfaceState
+            variant="empty"
+            title="No artifacts match the current filters"
+            description="Clear the search or change the type filter to restore the artifact library view."
+          />
         )}
       </Panel>
     </div>

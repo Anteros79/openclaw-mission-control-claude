@@ -5,26 +5,32 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
-const PREFERRED = 3001;
-const RANGE_START = 3001;
-const RANGE_END = 3099;
 
-function findOpenPort(preferred, start, end) {
-  return new Promise((res, rej) => {
-    const tryPort = (port) => {
-      if (port > end) return rej(new Error("No open port found in range"));
-      const srv = createServer();
-      srv.once("error", () => tryPort(port + 1));
-      srv.once("listening", () => srv.close(() => res(port)));
-      srv.listen(port, "127.0.0.1");
-    };
-    tryPort(preferred);
+function findOpenPort() {
+  return new Promise((resolvePort, rejectPort) => {
+    const server = createServer();
+
+    server.once("error", rejectPort);
+    server.once("listening", () => {
+      const address = server.address();
+      const port = typeof address === "object" && address ? address.port : null;
+
+      server.close(() => {
+        if (!port) {
+          rejectPort(new Error("Unable to determine an available port."));
+          return;
+        }
+
+        resolvePort(port);
+      });
+    });
+
+    server.listen(0, "127.0.0.1");
   });
 }
 
-// Respect PORT env var (set by preview_start / autoPort), otherwise find one
 const envPort = process.env.PORT ? Number(process.env.PORT) : null;
-const port = envPort || (await findOpenPort(PREFERRED, RANGE_START, RANGE_END));
+const port = envPort || (await findOpenPort());
 
 console.log(`\n  ► Starting Next.js dev on port ${port}\n`);
 

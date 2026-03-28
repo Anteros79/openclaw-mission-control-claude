@@ -72,6 +72,12 @@ export type MissionControlActionResult = {
   completedAt: string;
 };
 
+export type MissionMoveTaskInput = {
+  cardId: string;
+  sourceColumnId: string;
+  targetColumnId: string;
+};
+
 export type MissionUsageScope = {
   id: string;
   scopeKind: "agent" | "global" | "project" | "session";
@@ -144,6 +150,12 @@ export type MissionChatAttachment = {
   name: string;
   kind: "image" | "pdf" | "markdown" | "config";
   sizeLabel: string;
+};
+
+export type MissionChatMessageInput = {
+  threadId: string;
+  content: string;
+  attachments: MissionChatAttachment[];
 };
 
 export type MissionChatMessage = {
@@ -311,3 +323,11 @@ export type MissionControlSnapshot = {
   artifacts: MissionArtifact[];
   sessions: MissionSession[];
 };
+
+export type MissionSnapshotMutationInput =
+  | ({
+      type: "move_task";
+    } & MissionMoveTaskInput)
+  | ({
+      type: "send_chat_message";
+    } & MissionChatMessageInput);

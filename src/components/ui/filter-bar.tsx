@@ -31,6 +31,7 @@ export const FilterBar = ({
         value={searchValue}
         onChange={(event) => onSearchChange(event.target.value)}
         placeholder={searchPlaceholder}
+        aria-label={searchPlaceholder}
         className="w-full min-w-[120px] bg-transparent text-sm text-white outline-none placeholder:text-white/35"
       />
     </div>
@@ -39,6 +40,7 @@ export const FilterBar = ({
         key={filter.label}
         value={filter.value}
         onChange={(event) => filter.onChange(event.target.value)}
+        aria-label={filter.label}
         className="relative rounded-full border border-white/10 bg-black/30 px-3 py-2 text-xs uppercase tracking-[0.22em] text-white/70 outline-none"
       >
         {filter.options.map((option) => (

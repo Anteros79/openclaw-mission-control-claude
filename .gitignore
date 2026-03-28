@@ -5,6 +5,12 @@ node_modules/
 .next/
 out/
 output/
+.mission-control/
+
+# local source assets kept outside public/
+/*.png
+/*.jpg
+/*.jpeg
 
 # env
 .env.local

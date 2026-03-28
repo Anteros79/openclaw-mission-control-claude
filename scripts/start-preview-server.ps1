@@ -1,6 +1,7 @@
 $root = Split-Path -Parent $PSScriptRoot
 $outputDir = Join-Path $root "output"
 $next = Join-Path $root "node_modules/.bin/next.cmd"
+$buildId = Join-Path $root ".next/BUILD_ID"
 
 if (-not (Test-Path $next)) {
   throw "next.cmd not found. Run from the project root after dependencies are installed."
@@ -15,7 +16,8 @@ New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 $runId = (Get-Date -Format "yyyyMMdd-HHmmss")
 $stdout = Join-Path $outputDir ("app-server-" + $runId + ".log")
 $stderr = Join-Path $outputDir ("app-server-" + $runId + ".err.log")
-$command = '"' + $next + '" dev --hostname 127.0.0.1 --port ' + $port
+$mode = if (Test-Path $buildId) { "start" } else { "dev" }
+$command = '"' + $next + '" ' + $mode + ' --hostname 127.0.0.1 --port ' + $port
 
 $process = Start-Process -FilePath "cmd.exe" `
   -ArgumentList @("/c", $command) `
